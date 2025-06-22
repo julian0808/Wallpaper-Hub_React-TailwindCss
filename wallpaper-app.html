@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wallpaper Hub | TailwindCSS</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .wallpaper-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .wallpaper-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .lightbox {
+            background-color: rgba(0,0,0,0.9);
+        }
+        .fade-in {
+            animation: fadeIn 0.5s;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .aspect-4-3 {
+            aspect-ratio: 4 / 3;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100">
+    <!-- Header -->
+    <header class="bg-white dark:bg-gray-800 shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center mb-4 md:mb-0">
+                <h1 class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+                    <i class="fas fa-image mr-2"></i>Wallpaper Hub
+                </h1>
+            </div>
+            
+            <div class="w-full md:w-1/3 relative">
+                <input 
+                    type="text" 
+                    id="searchInput"
+                    placeholder="Search wallpapers..." 
+                    class="w-full px-4 py-2 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                >
+                <button id="searchBtn" class="absolute right-2 top-2 text-gray-500 dark:text-gray-400">
+                    <i class="fas fa-search"></i>
+                </button>
+            </div>
+            
+            <div class="flex items-center space-x-4 mt-4 md:mt-0">
+                <button id="darkModeToggle" class="p-2 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-200">
+                    <i class="fas fa-moon dark:hidden"></i>
+                    <i class="fas fa-sun hidden dark:block"></i>
+                </button>
+                <button id="favoritesBtn" class="flex items-center px-4 py-2 bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-200 rounded-lg hover:bg-indigo-200 dark:hover:bg-indigo-800 transition">
+                    <i class="fas fa-heart mr-2"></i>
+                    <span id="favCount">0</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-8">
+        <!-- Controls -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+            <div class="mb-4 md:mb-0">
+                <h2 class="text-xl font-semibold">Browse Wallpapers</h2>
+                <p class="text-gray-600 dark:text-gray-400">High quality backgrounds for all devices</p>
+            </div>
+            
+            <div class="flex flex-wrap gap-4">
+                <div class="relative">
+                    <select id="categoryFilter" class="px-4 py-2 pr-8 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="all">All Categories</option>
+                        <option value="nature">Nature</option>
+                        <option value="abstract">Abstract</option>
+                        <option value="city">City</option>
+                        <option value="space">Space</option>
+                        <option value="minimal">Minimal</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-chevron-down"></i>
+                    </div>
+                </div>
+                
+                <div class="relative">
+                    <select id="sortBy" class="px-4 py-2 pr-8 rounded-lg border border-gray-300 dark:border-gray-700 dark:bg-gray-800 appearance-none focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                        <option value="newest">Newest First</option>
+                        <option value="popular">Most Popular</option>
+                        <option value="rating">Highest Rated</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-700 dark:text-gray-300">
+                        <i class="fas fa-sort"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Wallpaper Grid -->
+        <div id="wallpaperGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Wallpaper cards will be injected here -->
+        </div>
+        
+        <!-- Loading spinner -->
+        <div id="loadingSpinner" class="flex justify-center my-12 hidden">
+            <div class="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-indigo-500"></div>
+        </div>
+        
+        <!-- Load More Button -->
+        <div class="text-center mt-8">
+            <button id="loadMoreBtn" class="px-6 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium">
+                Load More Wallpapers
+            </button>
+        </div>
+    </main>
+    
+    <!-- Lightbox -->
+    <div id="lightbox" class="fixed inset-0 z-50 lightbox hidden items-center justify-center p-4">
+        <div class="relative w-full max-w-4xl">
+            <button id="closeLightbox" class="absolute -top-2 -right-2 md:top-4 md:right-4 text-white text-3xl z-10 hover:text-gray-300 bg-black bg-opacity-50 rounded-full w-10 h-10 flex items-center justify-center">
+                <i class="fas fa-times"></i>
+            </button>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-xl fade-in">
+                <img id="lightboxImage" src="" alt="Wallpaper preview" class="w-full max-h-[70vh] object-contain bg-gray-100 dark:bg-gray-900">
+                
+                <div class="p-6">
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4">
+                        <div class="mb-4 md:mb-0">
+                            <h3 id="lightboxTitle" class="text-xl font-bold"></h3>
+                            <div id="lightboxCategory" class="text-sm text-gray-600 dark:text-gray-400"></div>
+                        </div>
+                        <div class="flex items-center space-x-4">
+                            <div class="flex items-center">
+                                <i class="fas fa-star text-yellow-500 mr-1"></i>
+                                <span id="lightboxRating" class="font-medium"></span>
+                            </div>
+                            <button id="lightboxFavorite" class="text-2xl">
+                                <i class="far fa-heart"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="flex flex-col sm:flex-row gap-4 mt-6">
+                        <a id="downloadBtn" href="#" download class="flex-1 px-4 py-3 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition font-medium flex items-center justify-center text-center">
+                            <i class="fas fa-download mr-2"></i> Download
+                        </a>
+                        <button id="setWallpaperBtn" class="flex-1 px-4 py-3 bg-gray-800 dark:bg-gray-700 text-white rounded-lg hover:bg-gray-900 dark:hover:bg-gray-600 transition font-medium flex items-center justify-center">
+                            <i class="fas fa-desktop mr-2"></i> Set as Wallpaper
+                        </button>
+                    </div>
+                    
+                    <div class="mt-6">
+                        <h4 class="font-medium mb-2">Tags</h4>
+                        <div id="lightboxTags" class="flex flex-wrap gap-2"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Favorites Modal -->
+    <div id="favoritesModal" class="fixed inset-0 z-50 bg-black bg-opacity-50 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-3xl max-h-[80vh] flex flex-col fade-in">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h3 class="text-xl font-bold">Your Favorite Wallpapers</h3>
+                <button id="closeFavorites" class="text-2xl text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            
+            <div id="favoritesContainerWrapper" class="p-4 overflow-y-auto">
+                <div id="favoritesContainer" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                    <!-- Favorites will be injected here -->
+                </div>
+                
+                <div id="emptyFavorites" class="text-center py-12 hidden">
+                    <i class="fas fa-heart text-5xl text-pink-500 mb-4"></i>
+                    <p class="text-lg font-medium mb-2">No favorites yet</p>
+                    <p class="text-gray-600 dark:text-gray-400">Start adding wallpapers to your favorites!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <script>
+        // Sample wallpaper data
+        const wallpaperData = [
+            { id: 1, title: "Mountain Sunrise", category: "nature", tags: ["mountains", "sunrise", "landscape"], rating: 4.7, favorite: false },
+            { id: 2, title: "Abstract Geometry", category: "abstract", tags: ["shapes", "modern", "colorful"], rating: 4.3, favorite: false },
+            { id: 3, title: "City Skyline", category: "city", tags: ["buildings", "night", "urban"], rating: 4.5, favorite: false },
+            { id: 4, title: "Galaxy Nebula", category: "space", tags: ["stars", "cosmos", "universe"], rating: 4.9, favorite: false },
+            { id: 5, title: "Minimal Forest", category: "minimal", tags: ["simple", "trees", "clean"], rating: 4.2, favorite: false },
+            { id: 6, title: "Ocean Waves", category: "nature", tags: ["water", "sea", "blue"], rating: 4.6, favorite: false },
+            { id: 7, title: "Color Splash", category: "abstract", tags: ["liquid", "art", "vibrant"], rating: 4.1, favorite: false },
+            { id: 8, title: "Neon Streets", category: "city", tags: ["night", "lights", "rain"], rating: 4.8, favorite: false },
+        ];
+        
+        // State management
+        let state = {
+            currentWallpapers: [],
+            favorites: JSON.parse(localStorage.getItem('favorites')) || [],
+            currentCategory: 'all',
+            sortBy: 'newest',
+            searchQuery: '',
+            isLoading: false,
+            darkMode: localStorage.getItem('darkMode') === 'true'
+        };
+        
+        // DOM Elements
+        const elements = {
+            wallpaperGrid: document.getElementById('wallpaperGrid'),
+            loadingSpinner: document.getElementById('loadingSpinner'),
+            loadMoreBtn: document.getElementById('loadMoreBtn'),
+            categoryFilter: document.getElementById('categoryFilter'),
+            sortBy: document.getElementById('sortBy'),
+            searchInput: document.getElementById('searchInput'),
+            searchBtn: document.getElementById('searchBtn'),
+            darkModeToggle: document.getElementById('darkModeToggle'),
+            favoritesBtn: document.getElementById('favoritesBtn'),
+            favCount: document.getElementById('favCount'),
+            lightbox: document.getElementById('lightbox'),
+            closeLightbox: document.getElementById('closeLightbox'),
+            lightboxImage: document.getElementById('lightboxImage'),
+            lightboxTitle: document.getElementById('lightboxTitle'),
+            lightboxCategory: document.getElementById('lightboxCategory'),
+            lightboxRating: document.getElementById('lightboxRating'),
+            lightboxFavorite: document.getElementById('lightboxFavorite'),
+            lightboxTags: document.getElementById('lightboxTags'),
+            downloadBtn: document.getElementById('downloadBtn'),
+            setWallpaperBtn: document.getElementById('setWallpaperBtn'),
+            favoritesModal: document.getElementById('favoritesModal'),
+            closeFavorites: document.getElementById('closeFavorites'),
+            favoritesContainer: document.getElementById('favoritesContainer'),
+            favoritesContainerWrapper: document.getElementById('favoritesContainerWrapper'),
+            emptyFavorites: document.getElementById('emptyFavorites')
+        };
+        
+        // Initialize app
+        function init() {
+            // Set initial state
+            state.currentWallpapers = [...wallpaperData];
+            updateFavCount();
+            
+            // Apply dark mode if set
+            if (state.darkMode) {
+                document.documentElement.classList.add('dark');
+            }
+            
+            // Render wallpapers
+            renderWallpapers();
+            
+            // Event listeners
+            setupEventListeners();
+        }
+        
+        // Set up event listeners
+        function setupEventListeners() {
+            // Filtering and sorting
+            elements.categoryFilter.addEventListener('change', handleCategoryChange);
+            elements.sortBy.addEventListener('change', handleSortChange);
+            
+            // Search functionality
+            elements.searchInput.addEventListener('input', handleSearch);
+            elements.searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') handleSearch();
+            });
+            elements.searchBtn.addEventListener('click', handleSearch);
+            
+            // Load more
+            elements.loadMoreBtn.addEventListener('click', loadMoreWallpapers);
+            
+            // UI controls
+            elements.darkModeToggle.addEventListener('click', toggleDarkMode);
+            elements.favoritesBtn.addEventListener('click', openFavorites);
+            elements.closeFavorites.addEventListener('click', closeFavorites);
+            
+            // Lightbox
+            elements.closeLightbox.addEventListener('click', closeLightbox);
+            elements.lightboxFavorite.addEventListener('click', toggleFavoriteFromLightbox);
+            elements.setWallpaperBtn.addEventListener('click', setAsWallpaper);
+            
+            // Close modals when clicking outside
+            window.addEventListener('click', (e) => {
+                if (e.target === elements.lightbox) closeLightbox();
+                if (e.target === elements.favoritesModal) closeFavorites();
+            });
+            
+            // Close with ESC key
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    if (!elements.lightbox.classList.contains('hidden')) closeLightbox();
+                    if (!elements.favoritesModal.classList.contains('hidden')) closeFavorites();
+                }
+            });
+        }
+        
+        // Render wallpapers to the grid
+        function renderWallpapers() {
+            elements.wallpaperGrid.innerHTML = '';
+            
+            const filtered = filterWallpapers();
+            const sorted = sortWallpapers(filtered);
+            
+            if (sorted.length === 0) {
+                elements.wallpaperGrid.innerHTML = `
+                    <div class="col-span-full text-center py-16">
+                        <i class="fas fa-image text-5xl text-gray-400 mb-4"></i>
+                        <h3 class="text-xl font-medium mb-2">No wallpapers found</h3>
+                        <p class="text-gray-600 dark:text-gray-400">Try changing your filters or search query</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            sorted.forEach(wallpaper => {
+                const isFavorite = state.favorites.includes(wallpaper.id);
+                const heartClass = isFavorite ? 'fas text-red-500' : 'far';
+                const imageUrl = `https://picsum.photos/seed/${wallpaper.id}/400/300`;
+                
+                const card = document.createElement('div');
+                card.className = 'wallpaper-card bg-white dark:bg-gray-800 rounded-xl overflow-hidden shadow-lg cursor-pointer fade-in';
+                card.innerHTML = `
+                    <div class="relative group">
+                        <img src="${imageUrl}" alt="${wallpaper.title}" class="aspect-4-3 w-full object-cover" loading="lazy">
+                        
+                        <div class="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="view-btn p-3 bg-white dark:bg-gray-800 rounded-full text-gray-800 dark:text-white shadow-lg hover:scale-110 transition-transform" data-id="${wallpaper.id}">
+                                <i class="fas fa-expand"></i>
+                            </button>
+                        </div>
+                        
+                        <button class="favorite-btn absolute top-3 right-3 p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full shadow-lg text-lg" data-id="${wallpaper.id}">
+                            <i class="${heartClass} fa-heart"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="p-4">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="font-semibold truncate">${wallpaper.title}</h3>
+                            <div class="flex items-center text-sm text-yellow-500">
+                                <i class="fas fa-star"></i>
+                                <span class="ml-1">${wallpaper.rating}</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex justify-between items-center">
+                            <span class="inline-block px-2 py-1 text-xs bg-indigo-100 dark:bg-indigo-900 text-indigo-800 dark:text-indigo-200 rounded-full">
+                                ${wallpaper.category.charAt(0).toUpperCase() + wallpaper.category.slice(1)}
+                            </span>
+                            <span class="text-xs text-gray-500 dark:text-gray-400">1920x1080</span>
+                        </div>
+                    </div>
+                `;
+                
+                elements.wallpaperGrid.appendChild(card);
+            });
+            
+            // Add event listeners to new elements
+            document.querySelectorAll('.view-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    openLightbox(id);
+                });
+            });
+            
+            document.querySelectorAll('.favorite-btn').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    toggleFavorite(id);
+                });
+            });
+            
+            document.querySelectorAll('.wallpaper-card').forEach(card => {
+                card.addEventListener('click', (e) => {
+                    if (!e.target.closest('.view-btn') && !e.target.closest('.favorite-btn')) {
+                        const id = parseInt(card.querySelector('.favorite-btn').dataset.id);
+                        openLightbox(id);
+                    }
+                });
+            });
+        }
+        
+        // Filter wallpapers based on current state
+        function filterWallpapers() {
+            return wallpaperData.filter(wallpaper => {
+                const categoryMatch = state.currentCategory === 'all' || wallpaper.category === state.currentCategory;
+                const searchMatch = !state.searchQuery || 
+                    wallpaper.title.toLowerCase().includes(state.searchQuery.toLowerCase()) ||
+                    wallpaper.tags.some(tag => tag.toLowerCase().includes(state.searchQuery.toLowerCase()));
+                
+                return categoryMatch && searchMatch;
+            });
+        }
+        
+        // Sort wallpapers based on current sort option
+        function sortWallpapers(wallpapers) {
+            return [...wallpapers].sort((a, b) => {
+                switch (state.sortBy) {
+                    case 'newest':
+                        return b.id - a.id;
+                    case 'popular':
+                    case 'rating':
+                        return b.rating - a.rating;
+                    default:
+                        return b.id - a.id;
+                }
+            });
+        }
+        
+        // Handle category change
+        function handleCategoryChange() {
+            state.currentCategory = elements.categoryFilter.value;
+            renderWallpapers();
+        }
+        
+        // Handle sort change
+        function handleSortChange() {
+            state.sortBy = elements.sortBy.value;
+            renderWallpapers();
+        }
+        
+        // Handle search
+        function handleSearch() {
+            state.searchQuery = elements.searchInput.value.trim();
+            renderWallpapers();
+        }
+        
+        // Toggle dark mode
+        function toggleDarkMode() {
+            state.darkMode = !state.darkMode;
+            document.documentElement.classList.toggle('dark', state.darkMode);
+            localStorage.setItem('darkMode', state.darkMode);
+        }
+        
+        // Toggle favorite
+        function toggleFavorite(id) {
+            const index = state.favorites.indexOf(id);
+            
+            if (index === -1) {
+                state.favorites.push(id);
+            } else {
+                state.favorites.splice(index, 1);
+            }
+            
+            localStorage.setItem('favorites', JSON.stringify(state.favorites));
+            updateFavCount();
+            renderWallpapers();
+            
+            if (!elements.favoritesModal.classList.contains('hidden')) {
+                renderFavorites();
+            }
+        }
+        
+        // Update favorites count
+        function updateFavCount() {
+            elements.favCount.textContent = state.favorites.length;
+        }
+        
+        // Open lightbox
+        function openLightbox(id) {
+            const wallpaper = wallpaperData.find(w => w.id === id);
+            if (!wallpaper) return;
+            
+            const isFavorite = state.favorites.includes(id);
+            const heartClass = isFavorite ? 'fas text-red-500' : 'far';
+            const imageUrl = `https://picsum.photos/seed/${id}/1280/720`;
+            
+            elements.lightboxImage.src = imageUrl;
+            elements.lightboxTitle.textContent = wallpaper.title;
+            elements.lightboxCategory.textContent = wallpaper.category.charAt(0).toUpperCase() + wallpaper.category.slice(1);
+            elements.lightboxRating.textContent = wallpaper.rating;
+            elements.lightboxFavorite.innerHTML = `<i class="${heartClass} fa-heart"></i>`;
+            elements.lightboxFavorite.dataset.id = id;
+            elements.downloadBtn.href = imageUrl;
+            elements.downloadBtn.setAttribute('download', `${wallpaper.title.replace(/\s/g, '_')}_${id}.jpg`);
+            elements.setWallpaperBtn.dataset.id = id;
+            
+            elements.lightboxTags.innerHTML = '';
+            wallpaper.tags.forEach(tag => {
+                const span = document.createElement('span');
+                span.className = 'px-3 py-1 bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-full text-sm';
+                span.textContent = tag;
+                elements.lightboxTags.appendChild(span);
+            });
+            
+            elements.lightbox.classList.remove('hidden');
+            elements.lightbox.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Close lightbox
+        function closeLightbox() {
+            elements.lightbox.classList.add('hidden');
+            elements.lightbox.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+        
+        // Toggle favorite from lightbox
+        function toggleFavoriteFromLightbox() {
+            const id = parseInt(elements.lightboxFavorite.dataset.id);
+            toggleFavorite(id);
+            
+            const isFavorite = state.favorites.includes(id);
+            const heartClass = isFavorite ? 'fas text-red-500' : 'far';
+            elements.lightboxFavorite.innerHTML = `<i class="${heartClass} fa-heart"></i>`;
+        }
+        
+        function setAsWallpaper() {
+            const id = elements.setWallpaperBtn.dataset.id;
+            alert(`Setting wallpaper with ID: ${id} as background is a platform-specific feature and cannot be done directly from a web browser.`);
+        }
+        
+        // Open favorites modal
+        function openFavorites() {
+            renderFavorites();
+            elements.favoritesModal.classList.remove('hidden');
+            elements.favoritesModal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+        
+        // Close favorites modal
+        function closeFavorites() {
+            elements.favoritesModal.classList.add('hidden');
+            elements.favoritesModal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+        
+        // Render favorites
+        function renderFavorites() {
+            if (state.favorites.length === 0) {
+                elements.emptyFavorites.classList.remove('hidden');
+                elements.favoritesContainer.innerHTML = '';
+                elements.favoritesContainerWrapper.style.display = 'block';
+            } else {
+                elements.emptyFavorites.classList.add('hidden');
+                elements.favoritesContainer.innerHTML = '';
+                elements.favoritesContainerWrapper.style.display = 'block';
+                
+                state.favorites.forEach(favId => {
+                    const wallpaper = wallpaperData.find(w => w.id === favId);
+                    if (!wallpaper) return;
+                    
+                    const imageUrl = `https://picsum.photos/seed/${wallpaper.id}/400/300`;
+                    const card = document.createElement('div');
+                    card.className = 'bg-white dark:bg-gray-700 rounded-lg overflow-hidden shadow';
+                    card.innerHTML = `
+                        <div class="relative group">
+                            <img src="${imageUrl}" alt="${wallpaper.title}" class="aspect-4-3 w-full object-cover" loading="lazy">
+                            <button class="remove-favorite absolute top-2 right-2 p-2 bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-full text-red-500" data-id="${wallpaper.id}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="p-3">
+                            <h4 class="font-medium truncate">${wallpaper.title}</h4>
+                            <div class="flex justify-between items-center mt-2">
+                                <span class="text-xs px-2 py-1 bg-indigo-100 dark:bg-indigo-800 text-indigo-800 dark:text-indigo-200 rounded-full">
+                                    ${wallpaper.category}
+                                </span>
+                                <button class="view-favorite p-1 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white" data-id="${wallpaper.id}">
+                                    <i class="fas fa-expand"></i>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    elements.favoritesContainer.appendChild(card);
+                });
+            }
+            
+            document.querySelectorAll('.remove-favorite').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    toggleFavorite(id);
+                });
+            });
+            
+            document.querySelectorAll('.view-favorite').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const id = parseInt(btn.dataset.id);
+                    closeFavorites();
+                    openLightbox(id);
+                });
+            });
+        }
+        
+        // Load more wallpapers (simulated)
+        function loadMoreWallpapers() {
+            elements.loadingSpinner.classList.remove('hidden');
+            elements.loadMoreBtn.disabled = true;
+            elements.loadMoreBtn.textContent = 'Loading...';
+            
+            setTimeout(() => {
+                const newWallpapers = [];
+                const startId = wallpaperData.length + 1;
+                for (let i = 0; i < 4; i++) {
+                    const newId = startId + i;
+                    newWallpapers.push({
+                        id: newId,
+                        title: `New Discovery ${newId}`,
+                        category: ['nature', 'abstract', 'city', 'space', 'minimal'][newId % 5],
+                        tags: ['new', 'fresh', 'random'],
+                        rating: (Math.random() * 1 + 4).toFixed(1),
+                        favorite: false
+                    });
+                }
+                
+                wallpaperData.push(...newWallpapers);
+                state.currentWallpapers = [...wallpaperData];
+                
+                renderWallpapers();
+                elements.loadingSpinner.classList.add('hidden');
+                elements.loadMoreBtn.disabled = false;
+                elements.loadMoreBtn.textContent = 'Load More Wallpapers';
+            }, 1000);
+        }
+        
+        // Initialize the app when DOM is loaded
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
